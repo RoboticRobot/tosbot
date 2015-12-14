@@ -4,18 +4,8 @@
 //   |    |(  <_> )        \ |    |   (  <_> )  |  
 //   |____| \____/_______  / |______  /\____/|__|  
 //                       \/         \/             
-//
-// This bot accepts all invites and play autmatically (lynch, day and night ability).
-// You can use it to farm or play in ranked.
-// Usage: npm start username password nickname ranked|any|nothing
-// License: wtfpl.net
-//
-// Answer to commands (whispers or all chat):
-// !stats, !villains, !doge, !resume, !info, !hide, !mayor, !self, !voteme, !ping, !help
-// Hidden commands: !exit, !role
 
 'use strict';
-
 var Game = require('./Game.js');
 var Account = require('./Account.js');
 var messages = require('./messages.js');

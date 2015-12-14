@@ -1,0 +1,8 @@
+{
+    "dependencies": {
+        "request-promise": "latest"
+    },
+    "scripts": {
+        "start": "node --harmony main.js"
+    }
+}

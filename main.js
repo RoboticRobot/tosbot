@@ -21,7 +21,7 @@ var lastwill = game => {
     return game.self().name + ' - ' + game.fakerole + '\n\n' +
     '(╯°□°）╯︵ ┻━┻';
 };
-var deathnote = game => '¯\_(ツ)_/¯';
+var deathnote = game => '¯\\_(ツ)_/¯';
 
 Account.login(process.argv[2], process.argv[3]).then(account => {
     var play = process.argv[5] === 'ranked' ? () => account.send(60) : process.argv[5] === 'any' ? () => account.play(3) : () => {};

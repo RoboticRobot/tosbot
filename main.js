@@ -31,7 +31,6 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
         var status = message.charCodeAt(0);
         if (status == 2) {
             console.log('Successfuly logged.');
-            // Uncomment one of this lines, or not (ie you want to party)
             play(account);
             //doThatThing(account); // Glitch pet
         } else {

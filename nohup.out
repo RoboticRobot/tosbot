@@ -1045,3 +1045,25 @@ Thomas Danforth (Werewolf) died.
 [UserLeftEndGameScreen: ]
 [UserLeftGame: ]
 [UserLeftEndGameScreen: ]
+[UserLeftGame: ]
+[UserLeftEndGameScreen: ]
+[StartRankedQueue: 284]
+
+> @ start /home/tosbot
+> node --harmony main.js "MightyBot" "123698741" "Spicy" "ranked"
+
+Successfuly logged.
+[UserStatistics: 59*15*1*7*7*5*0*0*1181*0*0]
+[SettingsInformation: 33]
+[SelectionSettings: 0,0,0,-2,0,0,-2,-2,-2,]
+[UserInformation: MightyBot*740]
+[SetLastBonusWinTime: 18771]
+[EarnedAchievements: 0,1,2,11,15,27,35,39,43,47,59,71,75,79,83,91,107,126,129,130,132,137,140,145,146,148,149,150,162,163,167,179,202,203,204,205,207,241]
+[PurchasedCharacters: 0,1,2,3,4]
+[PurchasedHouses: 0,1,2,3,4]
+[PurchasedBackgrounds: 0,1,2]
+[FriendList: entoren,455262,*holawrence,1800038,*blipbloplol,2306767,]
+[PurchasedLobbyIcons: 0]
+[PurchasedDeathAnimations: 0]
+[StartRankedQueue: 11]
+[StartRankedQueue: 300]

@@ -276,8 +276,7 @@ class Game {
     update() {
         this.account.send(17, this.lastwill(this));
         this.account.send(18, this.deathnote(this));
-        this.account.send(16, String.fromCharCode(this.report().evils[0].id));
-        this.account.send(16, String.fromCharCode(this.self().id));
+        this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
     }
     day() {
         this.update();

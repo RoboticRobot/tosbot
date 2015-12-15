@@ -1,6 +1,6 @@
 # TosBot
 
-Unofficial Bot for http://blankmediagames.com/TownOfSalem/ using **NodeJS**.
+Bot for http://blankmediagames.com/TownOfSalem/ using **NodeJS**.
 
 It accepts all invites and play autmatically (lynch, day and night ability). Useful to farm or play in ranked.
 

@@ -14,6 +14,7 @@ class Player {
         this.judgements = []; // {target: id, what: 'guilty'|'innocent'|'abstain'}
         this.messages = []; // Doesn't get updated when dead, array of days
         this.whispers = []; // {target: id, what: message || undefined}
+        this.targeted = 0; // Number of times plebs voted against player
     }
     log(message) {
         if (!this.dead) {
@@ -29,10 +30,10 @@ class Player {
         var stats = {
             messages: this.messages.map(day => day.length).reduce((a, b) => a + b, 0),
             votes: this.votes.filter(vote => vote !== null).length,
-            judgements: this.judgements.filter(judgement => judgement.what !== 'abstained').length,
+            judgements: this.judgements.filter(judgement => judgement.what === 'guilty').length,
             whispers: this.whispers.length
         };
-        stats.total = stats.messages + stats.votes + stats.judgements + stats.whispers;
+        stats.total = stats.messages + stats.votes + stats.judgements + stats.whispers - this.targeted;
         return stats;
     }
     total() {
@@ -58,12 +59,9 @@ class Game {
                 f('Total judgements: ' + stats.judgements + ', Alive: ' + this.array().filter(player => !player.dead).length);
             },
             '!villains': (f) => {
-                var report = this.report();
-                if (report.total > 0 && report.evils.length > 0) {
-                    report.evils.slice(0, 3).forEach(villain => {
-                        f('<font color="#FFFFFF">#' + villain.id + ' ' + villain.name + '</font> could be evil ~ <font color="#FF0000">' + Math.round((1 - villain.total() / report.total) * 100) + '%</font>');
-                    });
-                }
+                this.report().evils.slice(0, 3).forEach(villain => {
+                    f('<font color="#FFFFFF">#' + villain.id + ' ' + villain.name + '</font> could be evil ~ <font color="#FF0000">' + Math.round(villain.score * 1000) / 10 + '%</font>');
+                });
             },
             '!resume': (f, sender) => {
                 this.resume(this.players[sender - 1], f);
@@ -142,6 +140,9 @@ class Game {
                 this.cmds[message](account.chat.bind(account), origin);
             }
         });
+        account.on('StartNightTransition', () => {
+            this.update();
+        });
         account.on('NamesAndPositionsOfUsers', message => {
             this.players[message.charCodeAt(0) - 1] = new Player(message.charCodeAt(0), message.slice(1));
         });
@@ -162,13 +163,17 @@ class Game {
             var id = message.charCodeAt(0) - 1;
             var role = message.charCodeAt(1) - 1;
             this.players[id].die(messages.roles[role]);
+            this.update();
         });
         account.on('StartVoting', () => {
-            account.send(10, String.fromCharCode(this.report().evils[0].id));
+            if (this.w > 2) {
+                account.send(10, String.fromCharCode(this.report().evils[0].id));
+            }
         });
         var doVote = message => {
             var origin = this.players[message.charCodeAt(0) - 1];
             origin.votes[origin.votes.length - 1] = message.charCodeAt(1) - 1;
+            this.players[message.charCodeAt(1) - 1].targeted++;
         };
         account.on('UserVoted', doVote);
         account.on('UserChangedVoted', doVote);
@@ -193,9 +198,8 @@ class Game {
             }
         });
         account.on('StartJudgement', message => {
-            account.chat('I would say like ' + (Math.round((1 - this.players[onTrial].total() / this.report().total) * 1000) / 10) + '% evil.')
             //this.resume(this.players[onTrial], account.chat);
-            account.send(14); // Voting guilty because fuck
+            account.send(this.players[onTrial].isme ? 15 : 14); // Voting guilty for everyone, except self
         });
         account.on('TellJudgementVotes', message => {
             var origin = this.players[message.charCodeAt(0) - 1];
@@ -241,7 +245,7 @@ class Game {
     resume(player, f) {
         var stats = player.stats();
         f('<u><b>Stats for #' + player.id + ' ' + player.name + '</b></u>');
-        f('Messages: ' + stats.messages + ', Votes: ' + stats.votes + ', Judgements: ' + stats.judgements + ', Whispers: ' + stats.whispers);
+        f('Messages: ' + stats.messages + ', Votes: ' + stats.votes + ', Judgements: ' + stats.judgements + ', Whispers: ' + stats.whispers + ', Targeted: ' + player.targeted);
     }
     find(name) {
         return this.array().find(player => player.name === name);
@@ -257,22 +261,32 @@ class Game {
         var players = this.array().filter(player => !player.dead).filter(player => player.role === null);
         var total = players.map(player => player.total()).reduce((a, b) => a + b, 0);
         var evils = players.sort((a, b) => a.total() - b.total());
-        return {total, evils};
+        var min = evils[0].total();
+        var max = evils[evils.length - 1].total();
+        evils.forEach(player => {
+            if (max - min !== 0) {
+                player.score =  1 - (player.total() - min) / (max - min);
+            } else {
+                player.score = 0;
+            }
+        });
+        var avg = total / evils.length;
+        return {total, evils, min, max, avg};
     }
-    day() {
+    update() {
         this.account.send(17, this.lastwill(this));
         this.account.send(18, this.deathnote(this));
+        this.account.send(16, String.fromCharCode(this.report().evils[0].id));
+        this.account.send(16, String.fromCharCode(this.self().id));
+    }
+    day() {
+        this.update();
         this.w += 1;
         this.state = 'day';
         this.array().filter(player => !player.dead).forEach(player => {
             player.messages.push([]);
             player.votes.push(null);
         });
-        if (this.self().role === 'Mayor') {
-            this.account.send(16, String.fromCharCode(this.self().id));
-        } else {
-            this.account.send(16, String.fromCharCode(this.report().evils[0].id));
-        }
     }
 }
 

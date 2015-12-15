@@ -18,8 +18,12 @@ function doThatThing(account) {
 
 
 var lastwill = game => {
-    return game.self().name + ' - ' + game.fakerole + '\n\n' +
-    '(╯°□°）╯︵ ┻━┻';
+    var report = game.report();
+    var s = [];
+    report.evils.slice(0, 6).forEach(villain => {
+        s.push('#' + villain.id + ' ' + villain.name + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
+    });
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n(╯=▃=)╯︵┻━┻';
 };
 var deathnote = game => '¯\\_(ツ)_/¯';
 

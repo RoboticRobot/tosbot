@@ -23,6 +23,9 @@ var lastwill = game => {
     var report = game.report();
     var s = [];
     var villains = report.evils.slice(0, 6);
+    if (villains.length === 0) {
+        return '';
+    }
     var length = Math.max.apply(null, villains.map(villain => villain.name.length));
     s.push('#ID ' + 'Name'.paddingRight(length, ' ') + ' ~ Evil%');
     s.push(''.paddingRight(Math.min(26, s[0].length), '='));
@@ -30,9 +33,9 @@ var lastwill = game => {
         s.push('#' + villain.id.toString().paddingRight(2, ' ') + ' ' + villain.name.paddingRight(length, ' ') + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
     });
     var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n        (╯=▃=)╯︵┻━┻';
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n\n        (╯=▃=)╯︵┻━┻';
 };
-var deathnote = game => '¯\\_(ツ)_/¯';
+var deathnote = game => '(✿ ◕‿◕) ᓄ✂╰U╯';
 
 Account.login(process.argv[2], process.argv[3]).then(account => {
     var play = process.argv[5] === 'ranked' ? () => account.send(60) : process.argv[5] === 'any' ? () => account.play(3) : () => {};
@@ -89,7 +92,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
         
     });
     account.on('ReturnToHomePage', () => play(account));
+    account.on('LeaveRankedQueue', () => play(account));
     account.on('AcceptRankedPopup', () => account.send(62));
-    account.on('LeaveRankedQueue', () => account.send(60));
 });
 

@@ -128,7 +128,7 @@ class Game {
                 this.forcetarget = null;
             } else if (should_self && Math.random() < 0.2) {
                 target = this.self().id; 
-            } else if (this.self().role === 'Retributionist') {
+            } else if (['Retributionist', 'Amnesiac'].indexOf(this.self().role) !== -1) {
                 target = this.deads()[Math.floor(this.deads().length * Math.random())];
             } else if (['Bodyguard', 'Doctor', 'Lookout', 'Consort'].indexOf(this.self().role) !== -1) {
                 target = report.evils[report.evils.length - 1].id;
@@ -138,11 +138,11 @@ class Game {
             account.send(11, String.fromCharCode(target));
             account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
             account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
-            if (queue.length > 0) {
+            /*if (queue.length > 0) {
                 account.chat('Hey, I targeted ' + lastTarget + ' and got:'); // Tell mafia, medium or jailor about stuff
                 queue.forEach(message => account.chat(message));
                 queue = [];
-            }
+            }*/
         });
         account.on('UserChosenName', message => this.players[message.charCodeAt(1) - 1] = new Player(message.charCodeAt(1), message.slice(2)));
         account.on('ChatBoxMessage', message => {
@@ -152,7 +152,7 @@ class Game {
                 console.log(chalk.bold(messages.origins[origin] + ': ') + message);
                 if (messages.origins[origin] === 'Mafia') {
                     this.transcript.push(message);
-                    account.chat('Mafia: ' + message);
+                    //account.chat('Mafia: ' + message);
                 }
             } else {
                 if (this.players[origin - 1].dead) {
@@ -168,8 +168,14 @@ class Game {
                 this.cmds[message](account.chat.bind(account), origin);
             }
             if (message.match(/[0-9]{1,2}/)) {
-                account.send(10, String.fromCharCode(parseInt(message)));
-                this.forcetarget = parseInt(message);
+                var num = parseInt(message);
+                if (num >= 1 && num <= 15) {
+                    account.send(10, String.fromCharCode(parseInt(message)));
+                    this.forcetarget = parseInt(message);
+                }
+            }
+            if (message.match(new RegExp(this.self() ? this.self().name : '', 'i')) && (message.match(/cheat/i) || message.match(/bot/i)) || message.match(/hacker/i)) {
+                account.chat('I\'m not a bot...');
             }
         });
         account.on('MayorRevealed', message => {
@@ -212,7 +218,7 @@ class Game {
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
             if (this.w > 2) {
-                account.send(10, String.fromCharCode(this.report().evils[0].id));
+                account.send(10, String.fromCharCode(this.forcetarget || this.report().evils[0].id));
             }
         });
         var doVote = message => {
@@ -230,8 +236,9 @@ class Game {
             this.players[message.charCodeAt(0) - 1].dead = false;
         });
         account.on('BeingJailed', () => {
-            account.chat('Hello jailor. Nice to meet you. =)');
-            account.chat('I am actually ' + this.fakerole + '. Doin my best.');
+            account.chat('Hum, I\'m ' + this.fakerole);
+            setTimeout(() => account.chat('No will tho ^^\''), 5000);
+            setTimeout(() => account.chat('(V●ᴥ●V)'), 15000);
         });
         var onTrial = null;
         account.on('StartDefenseTransition', message => {
@@ -241,7 +248,8 @@ class Game {
         account.on('StartDefense', message => {
             console.log(chalk.bgBlue(' Defense '));
             if (this.players[onTrial].isme) {
-                account.chat('Well, I\'m ' + this.fakerole + '. Up to you now.')
+                account.chat('I\'m ' + this.fakerole + '...');
+                setTimeout(() => account.chat('Up to you now'), 5000);
             }
         });
         account.on('StartJudgement', message => {
@@ -339,7 +347,9 @@ class Game {
     update() {
         this.account.send(17, this.lastwill(this));
         this.account.send(18, this.deathnote(this));
-        this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
+        if (this.report().evils.length > 0) {
+            this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
+        }
     }
     day() {
         console.log(chalk.bgBlue(' Day '));

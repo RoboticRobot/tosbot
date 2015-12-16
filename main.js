@@ -4,6 +4,7 @@
 //   |    |(  <_> )        \ |    |   (  <_> )  |  
 //   |____| \____/_______  / |______  /\____/|__|  
 //                       \/         \/             
+// http://blankmediagames.com/TownOfSalem/Login1_3_3.swf
 
 'use strict';
 var Game = require('./Game.js');
@@ -28,7 +29,8 @@ var lastwill = game => {
     villains.forEach(villain => {
         s.push('#' + villain.id.toString().paddingRight(2, ' ') + ' ' + villain.name.paddingRight(length, ' ') + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
     });
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n(╯=▃=)╯︵┻━┻';
+    var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '(╯=▃=)╯︵┻━┻';
 };
 var deathnote = game => '¯\\_(ツ)_/¯';
 
@@ -82,6 +84,10 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
         //account.chat('<font color="#ff0000">G</font><font color="#ff7f00">G</font><font color="#ffff00">!</font><font color="#00ff00"> </font><font color="#00ffff">=</font><font color="#0000ff">)</font>');
         //account.chat('Feel free to add me! I will automatically accept all invites.');
         account.chat('GG! =)')
+        account.send(39);
+    });
+    account.on('EndGameInfo', () => {
+        
     });
     account.on('ReturnToHomePage', () => play(account));
     account.on('AcceptRankedPopup', () => account.send(62));

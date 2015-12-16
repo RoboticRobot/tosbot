@@ -24,7 +24,7 @@ class Player {
     die(role, reasons) {
         this.dead = true;
         this.role = role;
-        console.log(this.name + ' (' + role + ') died from [' + (reasons||[]).join(', ') + '].');
+        console.log('(' + role + ') ' + this.name + ' died from [' + (reasons||[]).join(', ') + '].');
     }
     stats() {
         var stats = {
@@ -43,6 +43,7 @@ class Player {
 
 class Game {
     constructor(account, lastwill, deathnote) {
+        this.transcript = [];
         this.forcetarget = null;
         this.lastwill = lastwill;
         this.deathnote = deathnote;
@@ -130,7 +131,7 @@ class Game {
                 target = report.evils[0].id;
             }
             account.send(11, String.fromCharCode(target));
-            account.send(19, String.fromCharCode(report.evils[0].id) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
+            account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
             account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
             if (queue.length > 0) {
                 account.chat('Hey, I targeted ' + lastTarget + ' and got:'); // Tell mafia, medium or jailor about stuff
@@ -144,8 +145,11 @@ class Game {
             message = message.slice(1);
             if (messages.origins.hasOwnProperty(origin)) {
                 console.log(messages.origins[origin] + ': ' + message);
+                if (messages.origins[origin] === 'Mafia') {
+                    this.transcript.push(message);
+                }
             } else {
-                console.log((this.players[origin - 1].dead ? '~' : '') + this.players[origin - 1].name + ': ' + message);
+                console.log((this.players[origin - 1].dead ? '~' : '') + (this.players[origin - 1].role ? '(' + this.players[origin - 1].role + ') ' : '') + this.players[origin - 1].name + ': ' + message);
                 if (this.state === 'day' && !this.cmds.hasOwnProperty(message)) {
                     this.players[origin - 1].log(message);
                 }
@@ -219,7 +223,7 @@ class Game {
         });
         account.on('StartDefense', message => {
             if (this.players[onTrial].isme) {
-                account.chat('Well, I\'m ' + this.fakerole + '. There is no evidence against me. Up to you now.')
+                account.chat('Well, I\'m ' + this.fakerole + '. Up to you now.')
             }
         });
         account.on('StartJudgement', message => {
@@ -234,6 +238,11 @@ class Game {
         account.on('OtherMafia', message => {
             for (var i = 0; i + 1 < message.length; i += 2) {
                 this.players[message.charCodeAt(i) - 1].role = messages.roles[message.charCodeAt(i + 1) - 1];
+            }
+        });
+        account.on('OtherVampires', message => {
+            for (let i = 0; i < message.length - 1; i+=2) {
+                this.players[message.charCodeAt(i) - 1].role = 'Vampire';
             }
         });
         account.on('StringTableMessage', message => {
@@ -251,7 +260,7 @@ class Game {
                 this.self().whispers.push({target: message.charCodeAt(1) - 1, what: message.slice(3)});
             } else if (type === 1) {
                 console.log('From ' + this.players[message.charCodeAt(1) - 1].name + ': ' + message.slice(3));
-                var text = message.slice(3);
+                let text = message.slice(3);
                 this.players[message.charCodeAt(1) - 1].whispers.push({target: this.self().id - 1, what: text});
                 if (this.cmds.hasOwnProperty(text)) {
                     this.cmds[text](s => {
@@ -259,8 +268,12 @@ class Game {
                     }, message.charCodeAt(1));
                 }
             } else {
-                console.log('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ' + message.slice(4));
-                this.players[message.charCodeAt(1) - 1].whispers.push({target: message.charCodeAt(2) - 1, what: message.slice(4)});
+                let text = message.slice(4);
+                console.log('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ' + text);
+                this.players[message.charCodeAt(1) - 1].whispers.push({target: message.charCodeAt(2) - 1, what: text});
+                if (text.match(/spy/i) && text.match(/test/i) && !this.players[message.charCodeAt(1) - 1].isme) {
+                    account.send(8, message.charAt(1) + ' ' + text);
+                }
             }
         });
     }
@@ -288,6 +301,9 @@ class Game {
     report() {
         var players = this.array().filter(player => !player.dead).filter(player => player.role === null);
         var total = players.map(player => player.total()).reduce((a, b) => a + b, 0);
+        if (players.length === 0) {
+            return {total: 0, evils: [], min:0, max:1, avg: 1/2};
+        }
         var evils = players.sort((a, b) => a.total() - b.total());
         var min = evils[0].total();
         var max = evils[evils.length - 1].total();

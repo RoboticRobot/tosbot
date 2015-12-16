@@ -184,7 +184,7 @@ class Game {
             var role = message.charCodeAt(1) - 1;
             var something = message.charCodeAt(2);
             var reasons = [];
-            for (let i = 3; i < message.length - 1; ++i) {
+            for (let i = 3; i < message.length; ++i) {
                 reasons.push(messages.reasons[message.charCodeAt(i)]);
             }
             this.players[id].die(messages.roles[role], reasons);

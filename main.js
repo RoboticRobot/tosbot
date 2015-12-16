@@ -30,7 +30,7 @@ var lastwill = game => {
         s.push('#' + villain.id.toString().paddingRight(2, ' ') + ' ' + villain.name.paddingRight(length, ' ') + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
     });
     var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '(╯=▃=)╯︵┻━┻';
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nhttps://github.com/blupbluplol/tosbot/\n        (╯=▃=)╯︵┻━┻';
 };
 var deathnote = game => '¯\\_(ツ)_/¯';
 
@@ -41,7 +41,6 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     account.on('ConnectionStatus', message => {
         var status = message.charCodeAt(0);
         if (status == 2) {
-            console.log('Successfuly logged.');
             play(account);
             //doThatThing(account); // Glitch pet
         } else {

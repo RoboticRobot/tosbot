@@ -1,4 +1,5 @@
 var messages = require('./messages.js');
+var chalk = require('chalk');
 
 class Player {
     constructor(id, name) {
@@ -24,7 +25,7 @@ class Player {
     die(role, reasons) {
         this.dead = true;
         this.role = role;
-        console.log('(' + role + ') ' + this.name + ' died from [' + (reasons||[]).join(', ') + '].');
+        console.log(chalk.bold('(' + role + ') ' + this.name + ' died from [' + (reasons||[]).join(', ') + '].'));
     }
     stats() {
         var stats = {
@@ -38,6 +39,9 @@ class Player {
     }
     total() {
         return this.stats().total;
+    }
+    toString() {
+        return chalk.bold((this.role ? '(' + this.role + ') ' : '') + this.name);
     }
 }
 
@@ -113,6 +117,7 @@ class Game {
         });
         account.on('StartDay', this.day.bind(this));
         account.on('StartNight', () => {
+            console.log(chalk.bgBlue(' Night '));
             this.state = 'night';
             var report = this.report();
             lastTarget = report.evils[0].name;
@@ -147,9 +152,14 @@ class Game {
                 console.log(messages.origins[origin] + ': ' + message);
                 if (messages.origins[origin] === 'Mafia') {
                     this.transcript.push(message);
+                    account.chat('Mafia: ' + message);
                 }
             } else {
-                console.log((this.players[origin - 1].dead ? '~' : '') + (this.players[origin - 1].role ? '(' + this.players[origin - 1].role + ') ' : '') + this.players[origin - 1].name + ': ' + message);
+                if (this.players[origin - 1].dead) {
+                    console.log(chalk.dim(this.players[origin - 1].toString() + ': ' + message));
+                } else {
+                    console.log(this.players[origin - 1].toString() + ': ' + message);
+                }
                 if (this.state === 'day' && !this.cmds.hasOwnProperty(message)) {
                     this.players[origin - 1].log(message);
                 }
@@ -158,8 +168,13 @@ class Game {
                 this.cmds[message](account.chat.bind(account), origin);
             }
             if (message.match(/[0-9]{1,2}/)) {
+                account.send(10, String.fromCharCode(parseInt(message)));
                 this.forcetarget = parseInt(message);
             }
+        });
+        account.on('MayorRevealed', message => {
+            //this.players[message.charCodeAt(0) - 1].role = 'Mayor';
+            this.players[message.charCodeAt(0) - 1].targeted--;
         });
         account.on('StartNightTransition', () => {
             this.update();
@@ -173,12 +188,12 @@ class Game {
             if (role <= 12) {
                 this.fakerole = name;
             }
-            console.log('You are ' + name + '.');
             if (role === 26) {
                 console.log('Target: ' + this.players[message.charCodeAt(2) - 1].name + '.');
             }
             this.players[message.charCodeAt(1) - 1].role = name;
             this.players[message.charCodeAt(1) - 1].isme = true;
+            console.log(chalk.bold('You are ' + this.players[message.charCodeAt(1) - 1].toString() + '.'));
         });
         account.on('SpyNightAbilityMessage', message => {
             this.players[message.charCodeAt(0) - 1].targeted--;
@@ -195,6 +210,7 @@ class Game {
             this.update();
         });
         account.on('StartVoting', () => {
+            console.log(chalk.bgBlue(' Voting '));
             if (this.w > 2) {
                 account.send(10, String.fromCharCode(this.report().evils[0].id));
             }
@@ -220,13 +236,16 @@ class Game {
         var onTrial = null;
         account.on('StartDefenseTransition', message => {
             onTrial = message.charCodeAt(0) - 1;
+            console.log(chalk.bold(this.players[onTrial].toString() + ' was put on trial.'));
         });
         account.on('StartDefense', message => {
+            console.log(chalk.bgBlue(' Defense '));
             if (this.players[onTrial].isme) {
                 account.chat('Well, I\'m ' + this.fakerole + '. Up to you now.')
             }
         });
         account.on('StartJudgement', message => {
+            console.log(chalk.bgBlue(' Judgement '));
             //this.resume(this.players[onTrial], account.chat);
             account.send(this.players[onTrial].isme ? 15 : 14); // Voting guilty for everyone, except self
         });
@@ -248,7 +267,7 @@ class Game {
         account.on('StringTableMessage', message => {
             var id = message.charCodeAt(0) - 1;
             queue.push(messages.tables[id]);
-            console.log(messages.tables[id]);
+            console.log(chalk.bgWhite(messages.tables[id]));
         });
         account.on('NotifyUsersOfPrivateMessage', message => {
             this.players[message.charCodeAt(0) - 1].whispers.push({target: message.charCodeAt(1) - 1})
@@ -256,10 +275,10 @@ class Game {
         account.on('PrivateMessage', message => {
             var type = message.charCodeAt(0) - 1;
             if (type === 0) {
-                console.log('To ' + this.players[message.charCodeAt(1) - 1].name + ': ' + message.slice(3));
+                console.log(chalk.magenta('To ' + this.players[message.charCodeAt(1) - 1].name + ': ') + message.slice(3));
                 this.self().whispers.push({target: message.charCodeAt(1) - 1, what: message.slice(3)});
             } else if (type === 1) {
-                console.log('From ' + this.players[message.charCodeAt(1) - 1].name + ': ' + message.slice(3));
+                console.log(chalk.magenta('From ' + this.players[message.charCodeAt(1) - 1].name + ': ') + message.slice(3));
                 let text = message.slice(3);
                 this.players[message.charCodeAt(1) - 1].whispers.push({target: this.self().id - 1, what: text});
                 if (this.cmds.hasOwnProperty(text)) {
@@ -269,7 +288,7 @@ class Game {
                 }
             } else {
                 let text = message.slice(4);
-                console.log('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ' + text);
+                console.log(chalk.magenta('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ') + text);
                 this.players[message.charCodeAt(1) - 1].whispers.push({target: message.charCodeAt(2) - 1, what: text});
                 if (text.match(/spy/i) && text.match(/test/i) && !this.players[message.charCodeAt(1) - 1].isme) {
                     account.send(8, message.charAt(1) + ' ' + text);
@@ -323,6 +342,7 @@ class Game {
         this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
     }
     day() {
+        console.log(chalk.bgBlue(' Day '));
         this.update();
         this.w += 1;
         this.state = 'day';

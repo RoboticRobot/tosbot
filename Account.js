@@ -2,6 +2,7 @@ var querystring = require('querystring');
 var rp = require('request-promise');
 var net = require('net');
 var messages = require('./messages.js');
+var chalk = require('chalk');
 
 var server = {
     address: '104.130.244.249',
@@ -30,7 +31,8 @@ class Account {
         if (this.handlers.has(name)) {
             this.handlers.get(name)(message);
         } else {
-            console.log('[' + name + ': ' + message.replace(/[^ -~]+/g, '') + ']');
+            var text = message.replace(/[^ -~]+/g, '');
+            console.log(chalk.blue('[' + name + (text.length > 0 ? ': ' + text : '') + ']'));
         }
     }
     chat(message) {

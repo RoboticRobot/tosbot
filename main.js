@@ -30,7 +30,7 @@ var lastwill = game => {
         s.push('#' + villain.id.toString().paddingRight(2, ' ') + ' ' + villain.name.paddingRight(length, ' ') + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
     });
     var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nhttps://github.com/blupbluplol/tosbot/\n        (╯=▃=)╯︵┻━┻';
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n        (╯=▃=)╯︵┻━┻';
 };
 var deathnote = game => '¯\\_(ツ)_/¯';
 

@@ -267,7 +267,7 @@ class Game {
         account.on('StringTableMessage', message => {
             var id = message.charCodeAt(0) - 1;
             queue.push(messages.tables[id]);
-            console.log(chalk.bgWhite(messages.tables[id]));
+            console.log(chalk.inverse(messages.tables[id]));
         });
         account.on('NotifyUsersOfPrivateMessage', message => {
             this.players[message.charCodeAt(0) - 1].whispers.push({target: message.charCodeAt(1) - 1})

@@ -16,12 +16,17 @@ function doThatThing(account) {
     }
 }
 
+String.prototype.paddingRight = function(length,pad) {return this+Array(length-this.length+1).join(pad||" ")};
 
 var lastwill = game => {
     var report = game.report();
     var s = [];
-    report.evils.slice(0, 6).forEach(villain => {
-        s.push('#' + villain.id + ' ' + villain.name + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
+    var villains = report.evils.slice(0, 6);
+    var length = Math.max.apply(null, villains.map(villain => villain.name.length));
+    s.push('#ID ' + 'Name'.paddingRight(length, ' ') + ' ~ Evil%');
+    s.push(''.paddingRight(Math.min(26, s[0].length), '='));
+    villains.forEach(villain => {
+        s.push('#' + villain.id.toString().paddingRight(2, ' ') + ' ' + villain.name.paddingRight(length, ' ') + ' ~ ' + Math.round(villain.score * 1000) / 10 + '%');
     });
     return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n(╯=▃=)╯︵┻━┻';
 };
@@ -61,6 +66,15 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
         game = new Game(account, lastwill, deathnote);
         account.send(21, process.argv[4]);
         //account.chat('Hello fellow humans. Good luck and have fun! :)');
+    });
+    
+    account.on('FriendMessage', message => {
+        var tokens = message.split('*');
+        if (parseInt(tokens[1]) === 0) {
+            var origin = tokens[0];
+            var text = tokens.slice(2).join('*');
+            console.log('Message from ' + origin + ': ' + text);
+        }
     });
     
     account.on('SomeoneHasWon', () => {

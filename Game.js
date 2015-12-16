@@ -21,10 +21,10 @@ class Player {
             this.messages[this.messages.length - 1].push(message);
         }
     }
-    die(role) {
+    die(role, reasons) {
         this.dead = true;
         this.role = role;
-        console.log(this.name + ' (' + role + ') died.');
+        console.log(this.name + ' (' + role + ') died from [' + (reasons||[]).join(', ') + '].');
     }
     stats() {
         var stats = {
@@ -43,6 +43,7 @@ class Player {
 
 class Game {
     constructor(account, lastwill, deathnote) {
+        this.forcetarget = null;
         this.lastwill = lastwill;
         this.deathnote = deathnote;
         this.fakerole = messages.roles[Math.floor(Math.random() * 12)];
@@ -82,7 +83,7 @@ class Game {
                 process.exit();
             },
             '!self': () => {
-                account.send(8, String.fromCharCode(this.self().id) + ' ' + s);
+                account.send(8, String.fromCharCode(this.self().id) + ' Something.');
             },
             '!role': (f) => {
                 f('I am ' + this.self().role + '.');
@@ -91,7 +92,7 @@ class Game {
                 f('pong!');
             },
             '!voteme': (f, sender) => {
-                account.send(10, sender);
+                account.send(10, String.fromCharCode(sender));
             },
             '!help': (f) => {
                 f('Commands are !stats, !villains, !doge, !resume, !info, !hide, !mayor, !self, !voteme, !ping, !help.');
@@ -115,7 +116,20 @@ class Game {
             var report = this.report();
             lastTarget = report.evils[0].name;
             var should_self = ['Arsonist', 'Veteran', 'Doctor', 'Bodyguard'].indexOf(this.self().role) !== -1;
-            account.send(11, String.fromCharCode(should_self && Math.random() < 0.2 ? this.self().id : report.evils[0].id)); // Night target 1
+            var target = null;
+            if (this.forcetarget) {
+                target = this.forcetarget;
+                this.forcetarget = null;
+            } else if (should_self && Math.random() < 0.2) {
+                target = this.self().id; 
+            } else if (this.self().role === 'Retributionist') {
+                target = this.deads()[Math.floor(this.deads().length * Math.random())];
+            } else if (['Bodyguard', 'Doctor', 'Lookout', 'Consort'].indexOf(this.self().role) !== -1) {
+                target = report.evils[report.evils.length - 1].id;
+            } else {
+                target = report.evils[0].id;
+            }
+            account.send(11, String.fromCharCode(target));
             account.send(19, String.fromCharCode(report.evils[0].id) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
             account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
             if (queue.length > 0) {
@@ -139,6 +153,9 @@ class Game {
             if (this.cmds.hasOwnProperty(message)) {
                 this.cmds[message](account.chat.bind(account), origin);
             }
+            if (message.match(/[0-9]{1,2}/)) {
+                this.forcetarget = parseInt(message);
+            }
         });
         account.on('StartNightTransition', () => {
             this.update();
@@ -159,10 +176,18 @@ class Game {
             this.players[message.charCodeAt(1) - 1].role = name;
             this.players[message.charCodeAt(1) - 1].isme = true;
         });
+        account.on('SpyNightAbilityMessage', message => {
+            this.players[message.charCodeAt(0) - 1].targeted--;
+        });
         account.on('WhoDiedAndHow', message => {
             var id = message.charCodeAt(0) - 1;
             var role = message.charCodeAt(1) - 1;
-            this.players[id].die(messages.roles[role]);
+            var something = message.charCodeAt(2);
+            var reasons = [];
+            for (let i = 3; i < message.length - 1; ++i) {
+                reasons.push(messages.reasons[message.charCodeAt(i)]);
+            }
+            this.players[id].die(messages.roles[role], reasons);
             this.update();
         });
         account.on('StartVoting', () => {
@@ -256,6 +281,9 @@ class Game {
             players.push(this.players[i]);
         }
         return players;
+    }
+    deads() {
+        return this.array().filter(player => player.dead);
     }
     report() {
         var players = this.array().filter(player => !player.dead).filter(player => player.role === null);

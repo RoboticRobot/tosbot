@@ -25,7 +25,7 @@ class Player {
     die(role, reasons) {
         this.dead = true;
         this.role = role;
-        console.log(chalk.bold('(' + role + ') ' + this.name + ' died from [' + (reasons||[]).join(', ') + '].'));
+        console.log(chalk.bold('(' + role + ') ' + this.name + ' died from [' + (reasons||['Lynch']).join(', ') + '].'));
     }
     stats() {
         var stats = {
@@ -149,14 +149,14 @@ class Game {
             var origin = message.charCodeAt(0);
             message = message.slice(1);
             if (messages.origins.hasOwnProperty(origin)) {
-                console.log(messages.origins[origin] + ': ' + message);
+                console.log(chalk.bold(messages.origins[origin] + ': ') + message);
                 if (messages.origins[origin] === 'Mafia') {
                     this.transcript.push(message);
                     account.chat('Mafia: ' + message);
                 }
             } else {
                 if (this.players[origin - 1].dead) {
-                    console.log(chalk.dim(this.players[origin - 1].toString() + ': ' + message));
+                    console.log(chalk.gray(this.players[origin - 1].toString() + ': ' + message));
                 } else {
                     console.log(this.players[origin - 1].toString() + ': ' + message);
                 }

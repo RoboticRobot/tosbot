@@ -39,7 +39,7 @@ String.prototype.paddingRight = function(length,pad) {return this+Array(length-t
 };*/
 var lastwill = game => {
     var hints = game.report().evils.slice(0, Math.ceil(Math.random() * 4)).map(p => p.name.toLowerCase());
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + hints.join(', ') + ' ' + (hints.length > 1 ? 'are' : 'is') + ' suspicious\n\n' + dong.dankest();
+    return game.self().name + ' - ' + game.fakerole + '\n' + hints.join(', ') + ' ' + (hints.length > 1 ? 'are' : 'is') + ' suspicious\n\n' + dong.dankest();
 };
 var deathnote = game => dong.dankest();
 

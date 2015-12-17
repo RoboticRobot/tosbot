@@ -1,5 +1,7 @@
 var messages = require('./messages.js');
 var chalk = require('chalk');
+var chance = require('chance').Chance();
+var dong = require('./dong');
 
 class Player {
     constructor(id, name) {
@@ -51,7 +53,7 @@ class Game {
         this.transcript = [];
         this.lastwill = lastwill;
         this.deathnote = deathnote;
-        this.fakerole = messages.roles[Math.floor(Math.random() * 12)];
+        this.fakerole = chance.pick(messages.roles.slice(0, 12));
         this.cmds = {
             '!stats': (f) => {
                 var stats = this.array().map(player => player.stats()).reduce((a, b) => {
@@ -124,10 +126,10 @@ class Game {
             lastTarget = report.evils[0].name;
             var should_self = ['Arsonist', 'Veteran', 'Doctor', 'Bodyguard'].indexOf(this.self().role) !== -1;
             var target = null;
-            if (should_self && Math.random() < 0.2) {
+            if (should_self && chance.bool({likehood: 30})) {
                 target = this.self().id; 
             } else if (['Retributionist', 'Amnesiac'].indexOf(this.self().role) !== -1) {
-                target = this.deads()[Math.floor(this.deads().length * Math.random())];
+                target = chance.pick(this.deads());
             } else if (['Bodyguard', 'Doctor', 'Lookout', 'Consort'].indexOf(this.self().role) !== -1) {
                 target = report.evils[report.evils.length - 1].id;
             } else {
@@ -139,7 +141,7 @@ class Game {
                 }
                 account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
                 account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
-            }, Math.random() * 10000);
+            }, chance.normal({mean: 5000}));
         });
         account.on('UserChosenName', message => this.players[message.charCodeAt(1) - 1] = new Player(message.charCodeAt(1), message.slice(2)));
         account.on('ChatBoxMessage', message => {
@@ -202,20 +204,22 @@ class Game {
             this.players[id].die(messages.roles[role], reasons);
             this.update();
         });
-        var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'I\'m a hacker and I know this guy is evil', 'K let\'s random', 'random.org', 'Chosen by fair roll dice, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?', ' I am the Sheriff.  I found our Mafioso last night.  It\'s Player Nine!!', 'Hrm....  Need to find the SK....'];
+        var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'K let\'s random', 'random.org', 'Chosen by fair dice roll, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?', ' I am the Sheriff.  I found our Mafioso last night.  It\'s Player Nine!!', 'Hrm....  Need to find the SK....'];
         var currentVote = null;
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
             currentVote = null;
-            if (Math.random() < 0.66 && !this.self().dead) {
-                var t = this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))];
-                currentVote = t.id;
+            if (chance.bool({likehood: 66}) && !this.self().dead) {
+                var t = chance.pick(this.report().evils.slice(0, 3));
                 setTimeout(() => {
-                    account.send(10, String.fromCharCode(t.id));
-                    if (Math.random() < 0.33) {
-                        setTimeout(() => account.chat(reasonsVote[Math.floor(Math.random() * reasonsVote.length)]), Math.random() * 4000);
+                    if (currentVote !== t.id) {
+                        account.send(10, String.fromCharCode(t.id));
+                        currentVote = t.id;
+                        if (chance.bool({likehood: 100})) {
+                            setTimeout(() => account.chat(chance.pick(reasonsVote)), chance.normal({mean: 2000}));
+                        }
                     }
-                }, Math.random() * 5000);
+                }, chance.normal({mean: 2500}));
             }
         });
         var doVote = message => {
@@ -223,9 +227,13 @@ class Game {
             origin.votes[origin.votes.length - 1] = message.charCodeAt(1) - 1;
             this.players[message.charCodeAt(1) - 1].targeted++;
             this.report();
-            if (this.players[message.charCodeAt(1) - 1].score > 0.5 && currentVote !== message.charCodeAt(1)) {
-                setTimeout(() => account.send(10, message.charAt(1)), Math.random() * 3000);
-                currentVote = message.charCodeAt(1);
+            if (this.players[message.charCodeAt(1) - 1].score > 0.5) {
+                setTimeout(() => {
+                    if (currentVote !== message.charCodeAt(1) && chance.bool({likehood: 30})) {
+                        account.send(10, message.charAt(1));
+                        currentVote = message.charCodeAt(1);
+                    }
+                }, chance.normal({mean: 1500}));
             }
         };
         account.on('UserVoted', doVote);
@@ -255,16 +263,18 @@ class Game {
             setTimeout(() => account.chat('Sorry, no will -_-'), 20000);
         }, () => {
             setTimeout(() => account.chat('Survivor. :)'), 3000);
-            setTimeout(() => account.chat('I understand the reasons you want to kill me. I won\'t be mad'), 7000);
-            setTimeout(() => account.chat('Still I\'m willing to help'), 12000);
+            setTimeout(() => account.chat('I understand the reasons you want to kill me. won\'t be mad'), 7000);
+            setTimeout(() => account.chat('still I\'m willing to help'), 12000);
             this.fakerole = 'Survivor';
         }, () => {
             setTimeout(() => account.chat('I know you wanna kill me'), 3000);
             setTimeout(() => account.chat('Sadly I forgot who am I :D'), 7000);
             setTimeout(() => account.chat('I will join ya soon guys :)'), 12000);
             this.fakerole = 'Amnesiac';
+        }, () => {
+            setTimeout(() => account.chat(dong.dankest()), 3000);
         }];
-        var defend = () => defenses[Math.floor(Math.random() * defenses.length)]();
+        var defend = () => chance.pick(defenses)();
         account.on('BeingJailed', () => {
             if (!this.alreadyJailed) {
                 defend();
@@ -285,7 +295,7 @@ class Game {
             } else {
                 this.report();
                 if (this.players[onTrial].score < 0.5) {
-                    setTimeout(() => account.chat('inno'), Math.random() * 10000);
+                    setTimeout(() => account.chat('inno'), chance.normal({mean: 5000}));
                 }
             }
         });
@@ -293,7 +303,7 @@ class Game {
             console.log(chalk.bgBlue(' Judgement '));
             if (!this.players[onTrial].isme) {
                 this.report();
-                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 14 : 15), 5000);
+                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 14 : 15), chance.normal({mean: 2500}));
             }
         });
         account.on('TellJudgementVotes', message => {
@@ -338,7 +348,7 @@ class Game {
                 console.log(chalk.magenta('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ') + text);
                 this.players[message.charCodeAt(1) - 1].whispers.push({target: message.charCodeAt(2) - 1, what: text});
                 if (text.match(/spy/i) && text.match(/test/i) && !this.players[message.charCodeAt(1) - 1].isme) {
-                    setTimeout(() => account.send(8, message.charAt(1) + ' ' + text), Math.random() * 3000);
+                    setTimeout(() => account.send(8, message.charAt(1) + ' ' + text), chance.normal({mean: 1500}));
                 }
             }
         });

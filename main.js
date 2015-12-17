@@ -12,18 +12,6 @@ var Account = require('./Account.js');
 var messages = require('./messages.js');
 var dong = require('./dong.js');
 var chance = new require('chance')(Math.random);
-chance.pick = function(a) {
-    return a[Math.floor(Math.random() * a.length)]
-};
-
-var dd = console.log;
-var p = null;
-console.log = (o) => {
-    if (o !== p) {
-        dd(o);
-        p = o;
-    }
-}
 
 function doThatThing(account) {
     for (let i = 0; i < 100; ++i) {

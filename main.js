@@ -11,7 +11,7 @@ var Game = require('./Game.js');
 var Account = require('./Account.js');
 var messages = require('./messages.js');
 var dong = require('./dong.js');
-var chance = require('chance').Chance();
+var chance = new require('chance')(Math.random);
 
 function doThatThing(account) {
     for (let i = 0; i < 100; ++i) {
@@ -37,11 +37,33 @@ String.prototype.paddingRight = function(length,pad) {return this+Array(length-t
     var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
     return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n\n        (╯=▃=)╯︵┻━┻';
 };*/
-var lastwill = game => {
-    var hints = game.report().evils.slice(0, Math.ceil(Math.random() * 4)).map(p => p.name.toLowerCase());
+var lastwills = [game => {
+    var hints = game.report().evils.slice(0, Math.min(game.w, Math.ceil(Math.random() * 4))).map(p => p.name.toLowerCase());
     return game.self().name + ' - ' + game.fakerole + '\n' + hints.join(', ') + ' ' + (hints.length > 1 ? 'are' : 'is') + ' suspicious\n\n' + dong.dankest();
-};
-var deathnote = game => dong.dankest();
+}, game => '', game => game.quote(), game => {
+    var report = game.report();
+    return game.self().name + '(' + game.fakerole.toLowerCase() + ')\n' + (report.evils.length > 0 ? report.evils[0].name : 'someone') + ' killed me :(';
+}, game => {
+    var report = game.report();
+    return  game.self().name + ' ~ ' + game.fakerole + '\n' + (report.evils.length > 0 ? report.evils[report.evils.length - 1].name.toLowerCase() : 'someone') + ' is maf';
+}, game => dong.bag(30), game => dong.dankest(), game => {
+    var report = game.report();
+    return 'It was ' + (report.evils.length > 0 ? report.evils[0].name : 'someone');
+}, game => dong.dankest(), game => {
+    var report = game.report();
+    var s = [];
+    for (let i = 0; i < game.w && i < report.evils.length; ++i) {
+        s.push((i + 1) + ') ' + report.evils[i].name.toLowerCase());
+    }
+    return game.self().name + ' the ' + game.self().role + '\n' + s.join('\n');
+}];
+var deathnotes = [game => dong.dankest(), game => dong.bag(30), game => game.quote(), game => {
+    var report = game.report();
+    return report.evils.length > 0 ? report.evils[report.evils.length - 1].name + ', you are next.' : '';
+}];
+var lastwill = chance.pick(lastwills);
+var deathnote = chance.pick(deathnotes);
+var randname = () => chance.bool({likehood: 20}) ? '' : chance.bool({likehood: 50}) ? chance.last(): (chance.bool({likehood: 50}) ? chance.capitalize(chance.word()) : chance.word());
 
 Account.login(process.argv[2], process.argv[3]).then(account => {
     var play = process.argv[4] === 'ranked' ? () => account.send(60) : process.argv[4] === 'any' ? () => account.play(3) : () => {};
@@ -74,7 +96,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     });
     account.on('PickNames', () => {
         game = new Game(account, lastwill, deathnote);
-        setTimeout(() =>account.send(21, process.argv[5] || chance.last()), Math.random() * 5000);
+        setTimeout(() => account.send(21, process.argv[5] || randname()), chance.integer({min: 2000, max: 10000}));
     });
     
     account.on('FriendMessage', message => {
@@ -88,7 +110,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     
     account.on('SomeoneHasWon', () => {
         account.remove('ChatBoxMessage');
-        if (Math.random() < 0.5) setTimeout(() => account.chat('gg'), Math.random() * 3000);
+        if (Math.random() < 0.5) setTimeout(() => account.chat('gg'), chance.integer({min: 2000, max: 10000}));
         setTimeout(() => account.send(39), 10000);
     });
     account.on('EndGameInfo', () => {

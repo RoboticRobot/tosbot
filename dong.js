@@ -92,3 +92,11 @@ module.exports.dankest = function() {
     };
     return assemble(dong);
 };
+
+module.exports.bag = function(q, glue) {
+    var s = [];
+    for (let i = 0; i < q; ++i) {
+        s.push(module.exports.dankest());
+    }
+    return s.join(glue || ' ');
+};

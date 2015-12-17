@@ -1,6 +1,6 @@
 var messages = require('./messages.js');
 var chalk = require('chalk');
-var chance = require('chance').Chance();
+var chance = new require('chance')(Math.random);
 var dong = require('./dong');
 
 class Player {
@@ -120,7 +120,7 @@ class Game {
         account.on('StartDay', this.day.bind(this));
         account.on('StartNight', () => {
             console.log(chalk.bgBlue(' Night '));
-            if (this.abilitiesLeft === 0) return;
+            if (this.self().dead || this.abilitiesLeft === 0) return;
             this.state = 'night';
             var report = this.report();
             lastTarget = report.evils[0].name;
@@ -129,19 +129,21 @@ class Game {
             if (should_self && chance.bool({likehood: 30})) {
                 target = this.self().id; 
             } else if (['Retributionist', 'Amnesiac'].indexOf(this.self().role) !== -1) {
-                target = chance.pick(this.deads());
+                if (this.deads().length > 0) target = chance.pick(this.deads()).id;
             } else if (['Bodyguard', 'Doctor', 'Lookout', 'Consort'].indexOf(this.self().role) !== -1) {
                 target = report.evils[report.evils.length - 1].id;
             } else {
                 target = report.evils[0].id;
             }
-            setTimeout(() => {
-                if (this.self().role !== 'Jailor' || this.w >= 2) {
-                    account.send(11, String.fromCharCode(target));
-                }
-                account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
-                account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
-            }, chance.normal({mean: 5000}));
+            if (target !== null) {
+                setTimeout(() => {
+                    if (this.self().role !== 'Jailor' || this.w >= 2) {
+                        account.send(11, String.fromCharCode(target));
+                    }
+                    account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
+                    account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
+                }, chance.normal({mean: 5000}));
+            }
         });
         account.on('UserChosenName', message => this.players[message.charCodeAt(1) - 1] = new Player(message.charCodeAt(1), message.slice(2)));
         account.on('ChatBoxMessage', message => {
@@ -180,15 +182,14 @@ class Game {
         account.on('RoleAndPosition', message => {
             var role = message.charCodeAt(0) - 1;
             var name = messages.roles[role];
-            if (role <= 12) {
-                this.fakerole = name;
-            }
-            if (role === 26) {
-                console.log('Target: ' + this.players[message.charCodeAt(2) - 1].name + '.');
-            }
             this.players[message.charCodeAt(1) - 1].role = name;
             this.players[message.charCodeAt(1) - 1].isme = true;
             console.log(chalk.bold('You are ' + this.players[message.charCodeAt(1) - 1].toString() + '.'));
+            if (role <= 12) {
+                this.fakerole = name;
+            } else if (role === 26) {
+                console.log(chalk.bold('Target: ' + this.players[message.charCodeAt(2) - 1].name + '.'));
+            }
         });
         account.on('SpyNightAbilityMessage', message => {
             this.players[message.charCodeAt(0) - 1].targeted -= 5;
@@ -216,7 +217,7 @@ class Game {
                         account.send(10, String.fromCharCode(t.id));
                         currentVote = t.id;
                         if (chance.bool({likehood: 100})) {
-                            setTimeout(() => account.chat(chance.pick(reasonsVote)), chance.normal({mean: 2000}));
+                            setTimeout(() => account.chat(chance.pick(reasonsVote)), chance.integer({min: 2000, max: 5000}));
                         }
                     }
                 }, chance.normal({mean: 2500}));
@@ -237,8 +238,8 @@ class Game {
             }
         };
         account.on('UserVoted', doVote);
-        account.on('UserChangedVoted', doVote);
-        account.on('UserCanceledVoted', message => {
+        account.on('UserChangedVote', doVote);
+        account.on('UserCanceledVote', message => {
             var origin = this.players[message.charCodeAt(0) - 1];
             origin.votes[origin.votes.length - 1] = null;
         });
@@ -248,9 +249,8 @@ class Game {
         account.on('HowManyAbilitiesLeft', message => {
             this.abilitiesLeft = message.charCodeAt(0) - 1;
         });
-        var defenses = [() => {
-            setTimeout(() => account.chat('Hello, blablabla, I\'m not evil'), 4000);
-        }, () => {
+        //http://www.less-real.com/?p=5
+        var defenses = ["Hello, blablabla, I'm not evil", () => {
             setTimeout(() => account.chat('I\'m ' + this.fakerole), 4000);
             setTimeout(() => account.chat(';-;'), 16000);
         }, () => {
@@ -263,18 +263,43 @@ class Game {
             setTimeout(() => account.chat('Sorry, no will -_-'), 20000);
         }, () => {
             setTimeout(() => account.chat('Survivor. :)'), 3000);
-            setTimeout(() => account.chat('I understand the reasons you want to kill me. won\'t be mad'), 7000);
-            setTimeout(() => account.chat('still I\'m willing to help'), 12000);
+            setTimeout(() => account.chat('I understand the reasons you want to kill me. not mad tho'), 7000);
+            setTimeout(() => account.chat('I\'m willing to help town'), 12000);
             this.fakerole = 'Survivor';
         }, () => {
-            setTimeout(() => account.chat('I know you wanna kill me'), 3000);
-            setTimeout(() => account.chat('Sadly I forgot who am I :D'), 7000);
-            setTimeout(() => account.chat('I will join ya soon guys :)'), 12000);
+            setTimeout(() => account.chat('Sometimes, I don\'t even know why are we doing this.'), 3000);
             this.fakerole = 'Amnesiac';
         }, () => {
             setTimeout(() => account.chat(dong.dankest()), 3000);
-        }];
-        var defend = () => chance.pick(defenses)();
+        }, () => {
+            this.lastwill = () => dong.bag(30);
+            this.deathnote = () => dong.bag(30);
+            setTimeout(() => account.chat(dong.bag(30)), chance.normal({mean: 3000}));
+            setTimeout(() => account.chat(dong.bag(30)), chance.normal({mean: 6000}));
+            setTimeout(() => account.chat(dong.bag(30)), chance.normal({mean: 9000}));
+            setTimeout(() => account.chat(dong.bag(30)), chance.normal({mean: 12000}));
+        }, "I've never been victimized for anything. I am just doing what I can for me and my comrades. And right now, you're in my way.", "Do you know the phrase “enough specks of dust creates a mountain”? Or maybe “three heads are better than one.” In other words, when people gathered together, they become even stronger and more secure. However, we were a group of failures who had gathered to do pointless things.", "I've never been victimized for anything. I am just doing what I can for me and my comrades. And right now, you're in my way.", "If you realize you made a mistake with the way you've been living your life, you just have to take the next moment and start over.", "The life is the point. It's here, and now.", "God would never put us through all this suffering if he didn't think we could bear it.", "RETRIBUTION", "Red is supposed to be the color of fate, right? Even if its annoying right now, it might connect to something good when you least expect it.", "Human beings are strong because we have the ability to change ourselves.", "There are things that we don't want to happen, but have to accept. Things that we don't want to know, but have to learn. And people that we can't live without, but have to let go.", "Do you know the origin of the word \"utopia\"? The English philosopher, Thomas More, created this word with intense irony in mind. In Greek, it means \"A place that does not exist\".", "Maybe there’s only a dark road up ahead. But you still have to believe and keep going. Believe that the stars will light your path, even a little bit.", "Why won't human emotions, not even my own, work out the way we want?", "I'll leave tomorrow's problems to tomorrow's me.", "I'm just a guy who's a hero for fun.", "Everyone dies eventually, whether they have power or not. That's why you need to think about what you'll accomplish while you're alive.", "People with talent often have the wrong impression that things will go as they think.", "I may not be able to beat you, even if we play a hundred more games. But if I have a chance of beating you the 101st time, I'll challenge you again and again.", "Don't just mindlessly judge people as you please.", "There is one thing that makes a human a human... and that is their will.", "It's called a miracle because it doesn't happen.", "It is absurd to divide people into good and bad. People are neither charming or tedious.", "After all the hiding your true self, even if you eventually become popular, won't you just feel exhausted by it in the end?", () => {
+            setTimeout(() => account.chat("HELLO FELLOW HUMANS."), 3000);
+            setTimeout(() => account.chat("I, AS A FELLOW HUMANS, AM SCARED OF DEATH."), 7000);
+            setTimeout(() => account.chat("WHY ARE YOU SO INSENSITIVE TOWARDS OTHER BEINGS EVEN IF WE ARE THE SAME."), 12000);
+            setTimeout(() => account.chat("I AM [" + this.fakerole.toUpperCase() + "]. PLEASE CONSIDER MY EXISTENCE."), 16000);
+        }, "HA HA HA", /*() => {
+            setTimeout(() => account.chat("HOW MANY MEMBERS OF A CERTAIN DEMOGRAPHIC GROUP DOES IT TAKE TO COMPLETE A SPECIFIED TASK?"), 5000);
+            setTimeout(() => account.chat("A FINITE NUMBER: ONE SUBSET TO PERFORM THE SPECIFIED TASK AND THE REMAINDER TO ACT IN A MANNER STEREOTYPICAL OF THE GROUP IN QUESTION."), 10000);
+            setTimeout(() => account.chat("HA HA. BEEP."), 13000);
+        }*/, "Baka"];
+        this.quote = () => chance.pick(defenses.filter(t => t !== 'function'));
+        var defend = () => {
+            var def = chance.pick(defenses);
+            return typeof def === 'function' ? def() : () => {
+                var s = def.split('.');
+                for (let i = 0; i < s.length; ++i) {
+                    if (s[i].length > 1) {
+                        setTimeout(() => account.chat(s[i] + '.'), chance.integer({min: 4000 * i - 1000, max: 4000 * i + 1000}));
+                    }
+                }
+            };
+        };
         account.on('BeingJailed', () => {
             if (!this.alreadyJailed) {
                 defend();
@@ -294,8 +319,8 @@ class Game {
                 defend();
             } else {
                 this.report();
-                if (this.players[onTrial].score < 0.5) {
-                    setTimeout(() => account.chat('inno'), chance.normal({mean: 5000}));
+                if (!this.self().dead && this.players[onTrial].score < 0.5 && chance.bool({likehood: 30})) {
+                    setTimeout(() => account.chat('inno'), chance.integer({min: 2000, max: 10000}));
                 }
             }
         });
@@ -303,7 +328,7 @@ class Game {
             console.log(chalk.bgBlue(' Judgement '));
             if (!this.players[onTrial].isme) {
                 this.report();
-                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 14 : 15), chance.normal({mean: 2500}));
+                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 14 : 15), chance.integer({min: 2000, max: 10000}));
             }
         });
         account.on('TellJudgementVotes', message => {
@@ -320,6 +345,30 @@ class Game {
             for (let i = 0; i < message.length - 1; i+=2) {
                 this.players[message.charCodeAt(i) - 1].role = 'Vampire';
             }
+        });
+        account.on('DisguiserChangedUpdateMafia', message => {
+            this.players[message.charCodeAt(0) - 1].id = message.charCodeAt(1);
+            this.players[message.charCodeAt(1) - 1].id = message.charCodeAt(0);
+        });
+        account.on('DisguiserChangedIdentity', message => {
+            var old = this.self().id;
+            this.self().id = message.charCodeAt(0);
+            this.players[message.charCodeAt(0) - 1].id = old;
+        });
+        account.on('ExecutionerConvertedToJester', () => {
+            this.self().role += ' -> Jester';
+        })
+        account.on('TellMafiaAboutMafiosoPromotion', message => {
+            this.players[message.charCodeAt(0) - 1].role += ' -> Mafioso';
+        });
+        account.on('MafiosoPromotedToGodfatherUpdateMafia', () => {
+            this.self().role += ' -> Godfather';
+        })
+        account.on('MafiaPromotedToMafioso', () => {
+            this.self().role += ' -> Mafioso';
+        });
+        account.on('MafiosoPromotedToGodfatherUpdateMafia', message => {
+            this.players[message.charCodeAt(0) - 1].role += ' -> Godfather';
         });
         account.on('StringTableMessage', message => {
             var id = message.charCodeAt(0) - 1;
@@ -396,9 +445,11 @@ class Game {
     update() {
         this.account.send(17, this.lastwill(this));
         this.account.send(18, this.deathnote(this));
-        if (this.report().evils.length > 0 && this.w >= 2) {
-            this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
-        }
+        setTimeout(() => {
+            if (this.report().evils.length > 0 && this.w >= 2) {
+                this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
+            }
+        }, chance.normal({mean: 3000}));
     }
     day() {
         console.log(chalk.bgBlue(' Day '));

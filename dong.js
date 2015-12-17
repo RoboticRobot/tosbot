@@ -100,3 +100,5 @@ module.exports.bag = function(q, glue) {
     }
     return s.join(glue || ' ');
 };
+
+console.log(require('chalk').bold(module.exports.dankest()));

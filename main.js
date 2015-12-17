@@ -38,7 +38,8 @@ String.prototype.paddingRight = function(length,pad) {return this+Array(length-t
     return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n\n        (╯=▃=)╯︵┻━┻';
 };*/
 var lastwill = game => {
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + game.report().evils.slice(0, Math.ceil(Math.random() * 4)).map(p => p.name.toLowerCase()).join(', ') + ' are suspicious\n\n' + dong.dankest();
+    var hints = game.report().evils.slice(0, Math.ceil(Math.random() * 4)).map(p => p.name.toLowerCase());
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + hints.join(', ') + ' ' + (hints.length > 1 ? 'are' : 'is') + ' suspicious\n\n' + dong.dankest();
 };
 var deathnote = game => dong.dankest();
 
@@ -73,7 +74,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     });
     account.on('PickNames', () => {
         game = new Game(account, lastwill, deathnote);
-        account.send(21, process.argv[5] || chance.last());
+        setTimeout(() =>account.send(21, process.argv[5] || chance.last()), Math.random() * 5000);
     });
     
     account.on('FriendMessage', message => {

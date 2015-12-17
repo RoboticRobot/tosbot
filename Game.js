@@ -200,16 +200,16 @@ class Game {
             this.players[id].die(messages.roles[role], reasons);
             this.update();
         });
-        var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'I\'m a hacker and I know this guy is evil', 'K let\'s random', 'random.org', 'Chosen by fair roll dice, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?'];
+        var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'I\'m a hacker and I know this guy is evil', 'K let\'s random', 'random.org', 'Chosen by fair roll dice, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?', ' I am the Sheriff.  I found our Mafioso last night.  It\'s Player Nine!!', 'Hrm....  Need to find the SK....'];
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
-            if (this.w > 2 && Math.random() < 0.33) {
+            if (Math.random() < 0.66) {
                 setTimeout(() => {
                     account.send(10, String.fromCharCode(this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))].id));
                     if (Math.random() < 0.5) {
                         setTimeout(() => acount.chat(reasonsVote[Math.floor(Math.random() * reasonsVote.length)]), Math.random() * 6000);
                     }
-                }, Math.random() * 10000);
+                }, Math.random() * 5000);
             }
         });
         var doVote = message => {
@@ -279,7 +279,7 @@ class Game {
             console.log(chalk.bgBlue(' Judgement '));
             if (!this.players[onTrial].isme) {
                 this.report();
-                account.send(this.players[onTrial].score > 0.5 ? 15 : 14);
+                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 15 : 14), 5000);
             }
         });
         account.on('TellJudgementVotes', message => {

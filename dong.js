@@ -1,3 +1,5 @@
+'use strict';
+
 // http://dongerlist.com/create-donger
 var parts = {
     arms: {
@@ -29,15 +31,17 @@ var orientations = {
 function arms(orientation) {
     if (orientation === orientations.center) {
         if (Math.random() < 0.5) {
-            var arm = sample(parts.arms.both);
+            let arm = sample(parts.arms.both);
             return {left: arm, right: arm};
         } else {
             return {left: sample(parts.arms.left), right: sample(parts.arms.right)};
         }
     } else if (orientation === orientations.left) {
-        return {left: sample(parts.arms.left), right: sample(parts.arms.left)};
+        let arm = sample(parts.arms.left);
+        return {left: arm, right: arm};
     } else if (orientation === orientations.right) {
-        return {left: sample(parts.arms.right), right: sample(parts.arms.right)};
+        let arm = sample(parts.arms.right);
+        return {left: arm, right: arm};
     }
 }
 

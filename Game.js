@@ -243,10 +243,12 @@ class Game {
             setTimeout(() => account.chat('Survivor. :)'), 3000);
             setTimeout(() => account.chat('I understand the reasons you want to kill me. I won\'t be mad'), 7000);
             setTimeout(() => account.chat('Still I\'m willing to help'), 12000);
+            this.fakerole = 'Survivor';
         }, () => {
             setTimeout(() => account.chat('I know you wanna kill me'), 3000);
             setTimeout(() => account.chat('Sadly I forgot who am I :D'), 7000);
             setTimeout(() => account.chat('I will join ya soon guys :)'), 12000);
+            this.fakerole = 'Amnesiac';
         }];
         var defend = () => defenses[Math.floor(Math.random() * this.defenses.length)]();
         account.on('BeingJailed', () => {

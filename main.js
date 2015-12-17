@@ -11,7 +11,7 @@ var Game = require('./Game.js');
 var Account = require('./Account.js');
 var messages = require('./messages.js');
 var dong = require('./dong.js');
-var chance = require('chance');
+var chance = require('chance').Chance();
 
 function doThatThing(account) {
     for (let i = 0; i < 100; ++i) {
@@ -38,7 +38,7 @@ String.prototype.paddingRight = function(length,pad) {return this+Array(length-t
     return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n\n        (╯=▃=)╯︵┻━┻';
 };*/
 var lastwill = game => {
-    return game.self().name + ' - ' + game.fakerole + '\n\n' + game.report().evils.slice(0, Math.ceil(Math.random() * 4)).forEach(p => p.name.toLowerCase()).join(', ') + ' are suspicious\n\n' + dong.dankest();
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + game.report().evils.slice(0, Math.ceil(Math.random() * 4)).map(p => p.name.toLowerCase()).join(', ') + ' are suspicious\n\n' + dong.dankest();
 };
 var deathnote = game => dong.dankest();
 

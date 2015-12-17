@@ -27,16 +27,16 @@ var orientations = {
 };
 
 function arms(orientation) {
-    if (orientation === directions.center) {
+    if (orientation === orientations.center) {
         if (Math.random() < 0.5) {
             var arm = sample(parts.arms.both);
             return {left: arm, right: arm};
         } else {
             return {left: sample(parts.arms.left), right: sample(parts.arms.right)};
         }
-    } else if (orientation === directions.left) {
+    } else if (orientation === orientations.left) {
         return {left: sample(parts.arms.left), right: sample(parts.arms.left)};
-    } else if (orientation === directions.right) {
+    } else if (orientation === orientations.right) {
         return {left: sample(parts.arms.right), right: sample(parts.arms.right)};
     }
 }
@@ -51,14 +51,40 @@ function body() {
     }
 }
 
+function eyes() {
+    return sample(parts.eyes);
+}
 
+function cheeks() {
+    return Math.random() < 0.1 ? sample(parts.cheeks) : '';
+}
+
+function mouth() {
+    return sample(parts.mouth);
+}
+
+function assemble(dong) {
+    if (dong.orientation === orientations.left) {
+        // \(-_-o\ ) <-- Sample dong
+        return dong.arms.left + dong.body.left + dong.eyes + dong.mouth + dong.eyes + dong.cheeks + dong.arms.right + (Math.random() < 0.1 ? ' ' : '') + dong.body.left;
+    } else if (dong.orientation === orientations.right) {
+        // ( /o-_-)/
+        return dong.body.left + (Math.random() < 0.1 ? ' ' : '') + dong.arms.left + dong.cheeks + dong.eyes + dong.mouth + dong.eyes + dong.body.left + dong.arms.right;
+    } else {
+        // \(o^_^o)/
+        return dong.arms.left + dong.body.left + dong.cheeks + dong.eyes + dong.mouth + dong.eyes + dong.cheeks + dong.body.left + dong.arms.right;
+    }
+}
 
 module.exports.dankest = function() {
     var orientation = sample([0, 1, 2]);
     var dong = {
         orientation,
         arms: arms(orientation),
-        body: body(orientation)
+        body: body(orientation),
+        eyes: eyes(),
+        cheeks: cheeks(),
+        mouth: mouth()
     };
-    return '';
+    return assemble(dong);
 };

@@ -47,6 +47,7 @@ class Player {
 
 class Game {
     constructor(account, lastwill, deathnote) {
+        this.abilitiesLeft = 100;
         this.transcript = [];
         this.lastwill = lastwill;
         this.deathnote = deathnote;
@@ -117,6 +118,7 @@ class Game {
         account.on('StartDay', this.day.bind(this));
         account.on('StartNight', () => {
             console.log(chalk.bgBlue(' Night '));
+            if (this.abilitiesLeft === 0) return;
             this.state = 'night';
             var report = this.report();
             lastTarget = report.evils[0].name;
@@ -205,7 +207,7 @@ class Game {
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
             currentVote = null;
-            if (Math.random() < 0.66) {
+            if (Math.random() < 0.66 && !this.self().dead) {
                 var t = this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))];
                 currentVote = t.id;
                 setTimeout(() => {
@@ -222,7 +224,7 @@ class Game {
             this.players[message.charCodeAt(1) - 1].targeted++;
             this.report();
             if (this.players[message.charCodeAt(1) - 1].score > 0.5 && currentVote !== message.charCodeAt(1)) {
-                setTimeout(() => account.send(10, message.charAt(1)), 400);
+                setTimeout(() => account.send(10, message.charAt(1)), Math.random() * 3000);
                 currentVote = message.charCodeAt(1);
             }
         };
@@ -234,6 +236,9 @@ class Game {
         });
         account.on('Resurrection', message => {
             this.players[message.charCodeAt(0) - 1].dead = false;
+        });
+        account.on('HowManyAbilitiesLeft', message => {
+            this.abilitiesLeft = message.charCodeAt(0) - 1;
         });
         var defenses = [() => {
             setTimeout(() => account.chat('Hello, blablabla, I\'m not evil'), 4000);
@@ -259,7 +264,7 @@ class Game {
             setTimeout(() => account.chat('I will join ya soon guys :)'), 12000);
             this.fakerole = 'Amnesiac';
         }];
-        var defend = () => defenses[Math.floor(Math.random() * this.defenses.length)]();
+        var defend = () => defenses[Math.floor(Math.random() * defenses.length)]();
         account.on('BeingJailed', () => {
             if (!this.alreadyJailed) {
                 defend();

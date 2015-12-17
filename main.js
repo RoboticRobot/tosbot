@@ -88,7 +88,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     
     account.on('SomeoneHasWon', () => {
         account.remove('ChatBoxMessage');
-        setTimeout(() => account.chat('gg'), 3000);
+        if (Math.random() < 0.5) setTimeout(() => account.chat('gg'), Math.random() * 3000);
         setTimeout(() => account.send(39), 10000);
     });
     account.on('EndGameInfo', () => {

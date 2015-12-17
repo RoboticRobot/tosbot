@@ -60,4 +60,5 @@ module.exports.dankest = function() {
         arms: arms(orientation),
         body: body(orientation)
     };
+    return '';
 };

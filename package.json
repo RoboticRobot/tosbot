@@ -1,7 +1,8 @@
 {
     "dependencies": {
         "request-promise": "latest",
-        "chalk": "latest"
+        "chalk": "latest",
+        "chance": "latest"
     },
     "scripts": {
         "start": "node --harmony main.js"

@@ -10,6 +10,8 @@
 var Game = require('./Game.js');
 var Account = require('./Account.js');
 var messages = require('./messages.js');
+var dong = require('./dong.js');
+var chance = require('chance');
 
 function doThatThing(account) {
     for (let i = 0; i < 100; ++i) {
@@ -19,7 +21,7 @@ function doThatThing(account) {
 
 String.prototype.paddingRight = function(length,pad) {return this+Array(length-this.length+1).join(pad||" ")};
 
-var lastwill = game => {
+/*var lastwill = game => {
     var report = game.report();
     var s = [];
     var villains = report.evils.slice(0, 6);
@@ -34,11 +36,14 @@ var lastwill = game => {
     });
     var transcript = game.transcript.length > 0 ? 'Mafia: ' + game.transcript.join(', ') + '\n\n' : '';
     return game.self().name + ' - ' + game.fakerole + '\n\n' + s.join('\n') + '\n\n' + transcript + '\nGithub: blupbluplol/tosbot\n\n        (╯=▃=)╯︵┻━┻';
+};*/
+var lastwill = game => {
+    return game.self().name + ' - ' + game.fakerole + '\n\n' + game.report().evils.slice(0, Math.ceil(Math.random() * 4)).forEach(p => p.name.toLowerCase()).join(', ') + ' are suspicious\n\n' + dong.dankest();
 };
-var deathnote = game => '(✿ ◕‿◕) ᓄ✂╰U╯';
+var deathnote = game => dong.dankest();
 
 Account.login(process.argv[2], process.argv[3]).then(account => {
-    var play = process.argv[5] === 'ranked' ? () => account.send(60) : process.argv[5] === 'any' ? () => account.play(3) : () => {};
+    var play = process.argv[4] === 'ranked' ? () => account.send(60) : process.argv[4] === 'any' ? () => account.play(3) : () => {};
     var partyID = null;
     var game = null;
     account.on('ConnectionStatus', message => {
@@ -68,8 +73,7 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     });
     account.on('PickNames', () => {
         game = new Game(account, lastwill, deathnote);
-        account.send(21, process.argv[4]);
-        //account.chat('Hello fellow humans. Good luck and have fun! :)');
+        account.send(21, process.argv[5] || chance.last());
     });
     
     account.on('FriendMessage', message => {
@@ -83,13 +87,11 @@ Account.login(process.argv[2], process.argv[3]).then(account => {
     
     account.on('SomeoneHasWon', () => {
         account.remove('ChatBoxMessage');
-        //account.chat('<font color="#ff0000">G</font><font color="#ff7f00">G</font><font color="#ffff00">!</font><font color="#00ff00"> </font><font color="#00ffff">=</font><font color="#0000ff">)</font>');
-        //account.chat('Feel free to add me! I will automatically accept all invites.');
-        account.chat('GG! =)')
-        account.send(39);
+        setTimeout(() => account.chat('gg'), 3000);
+        setTimeout(() => account.send(39), 10000);
     });
     account.on('EndGameInfo', () => {
-        
+        setTimeout(() => play(account), 10000);
     });
     account.on('ReturnToHomePage', () => play(account));
     account.on('LeaveRankedQueue', () => play(account));

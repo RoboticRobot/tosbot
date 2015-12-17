@@ -102,6 +102,7 @@ class Game {
                 f('Commands are !stats, !villains, !doge, !resume, !info, !hide, !mayor, !self, !voteme, !ping, !help.');
             }
         };
+        this.alreadyJailed = false;
         this.silent = false;
         this.w = 0;
         this.state = 'picking';
@@ -111,8 +112,6 @@ class Game {
         var queue = [];
         var lastTarget = null;
         account.on('StartFirstDay', () => {
-            account.chat('Good luck everyone. =)')
-            //this.cmds['!help']();
             this.day();
         });
         account.on('StartDay', this.day.bind(this));
@@ -132,16 +131,13 @@ class Game {
             } else {
                 target = report.evils[0].id;
             }
-            if (this.self().role !== 'Jailor' || this.w >= 2) {
-                account.send(11, String.fromCharCode(target));
-            }
-            account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
-            account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
-            /*if (queue.length > 0) {
-                account.chat('Hey, I targeted ' + lastTarget + ' and got:'); // Tell mafia, medium or jailor about stuff
-                queue.forEach(message => account.chat(message));
-                queue = [];
-            }*/
+            setTimeout(() => {
+                if (this.self().role !== 'Jailor' || this.w >= 2) {
+                    account.send(11, String.fromCharCode(target));
+                }
+                account.send(19, String.fromCharCode(target) + String.fromCharCode(1)); // Mafia update (blankmedia logic)
+                account.send(12, String.fromCharCode(report.evils[report.evils.length - 1])); // Night target 2
+            }, Math.random() * 10000);
         });
         account.on('UserChosenName', message => this.players[message.charCodeAt(1) - 1] = new Player(message.charCodeAt(1), message.slice(2)));
         account.on('ChatBoxMessage', message => {
@@ -165,12 +161,6 @@ class Game {
             }
             if (this.cmds.hasOwnProperty(message)) {
                 this.cmds[message](account.chat.bind(account), origin);
-            }
-            if (message.match(new RegExp(this.self() ? this.self().name : '', 'i')) && (message.match(/cheat/i) || message.match(/bot/i)) || message.match(/hacker/i)) {
-                if (!saidNotBot) {
-                    setTimeout(() => account.chat('I\'m not a bot... (V●ᴥ●V)'), Math.floor(Math.random() * 5000));
-                    saidNotBot = true;
-                }
             }
         });
         account.on('MayorRevealed', message => {
@@ -197,7 +187,7 @@ class Game {
             console.log(chalk.bold('You are ' + this.players[message.charCodeAt(1) - 1].toString() + '.'));
         });
         account.on('SpyNightAbilityMessage', message => {
-            this.players[message.charCodeAt(0) - 1].targeted--;
+            this.players[message.charCodeAt(0) - 1].targeted -= 5;
         });
         account.on('WhoDiedAndHow', message => {
             var id = message.charCodeAt(0) - 1;
@@ -210,10 +200,16 @@ class Game {
             this.players[id].die(messages.roles[role], reasons);
             this.update();
         });
+        var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'I\'m a hacker and I know this guy is evil', 'K let\'s random', 'random.org', 'Chosen by fair roll dice, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?'];
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
-            if (this.w > 2) {
-                account.send(10, String.fromCharCode(this.report().evils[0].id));
+            if (this.w > 2 && Math.random() < 0.33) {
+                setTimeout(() => {
+                    account.send(10, String.fromCharCode(this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))].id));
+                    if (Math.random() < 0.5) {
+                        setTimeout(() => acount.chat(reasonsVote[Math.floor(Math.random() * reasonsVote.length)]), Math.random() * 6000);
+                    }
+                }, Math.random() * 10000);
             }
         });
         var doVote = message => {
@@ -230,10 +226,36 @@ class Game {
         account.on('Resurrection', message => {
             this.players[message.charCodeAt(0) - 1].dead = false;
         });
-        account.on('BeingJailed', () => {
+        var defenses = [() => {
+            setTimeout(() => account.chat('Hello, blablabla, I\'m not evil'), 4000);
+        }, () => {
+            setTimeout(() => account.chat('I\'m ' + this.fakerole), 4000);
+            setTimeout(() => account.chat(';-;'), 16000);
+        }, () => {
             account.chat('Hum, I\'m ' + this.fakerole);
             setTimeout(() => account.chat('No will tho ^^\''), 5000);
             setTimeout(() => account.chat('(V●ᴥ●V)'), 15000);
+        }, () => {
+            setTimeout(() => account.chat(this.report().evils[0].name.toLowerCase() + ' is the one you want to hang'), 3000);
+            setTimeout(() => account.chat('I\'m ' + this.fakerole + ' btw'), 7000);
+            setTimeout(() => account.chat('Sorry, no will -_-'), 20000);
+        }, () => {
+            setTimeout(() => account.chat('Survivor. :)'), 3000);
+            setTimeout(() => account.chat('I understand the reasons you want to kill me. I won\'t be mad'), 7000);
+            setTimeout(() => account.chat('Still I\'m willing to help'), 12000);
+        }, () => {
+            setTimeout(() => account.chat('I know you wanna kill me'), 3000);
+            setTimeout(() => account.chat('Sadly I forgot who am I :D'), 7000);
+            setTimeout(() => account.chat('I will join ya soon guys :)'), 12000);
+        }];
+        var defend = () => defenses[Math.floor(Math.random() * this.defenses.length)]();
+        account.on('BeingJailed', () => {
+            if (!this.alreadyJailed) {
+                defend();
+                this.alreadyJailed = true;
+            } else {
+                setTimeout(() => account.chat(this.report().evils.slice(0, 3).map(p => p.name).join(', ')) + ' are suspicious', 5000);
+            }
         });
         var onTrial = null;
         account.on('StartDefenseTransition', message => {
@@ -243,14 +265,20 @@ class Game {
         account.on('StartDefense', message => {
             console.log(chalk.bgBlue(' Defense '));
             if (this.players[onTrial].isme) {
-                account.chat('I\'m ' + this.fakerole + '...');
-                setTimeout(() => account.chat('Up to you now'), 5000);
+                defend();
+            } else {
+                this.report();
+                if (this.players[onTrial].score < 0.5) {
+                    setTimeout(() => account.chat('inno'), Math.random() * 10000);
+                }
             }
         });
         account.on('StartJudgement', message => {
             console.log(chalk.bgBlue(' Judgement '));
-            //this.resume(this.players[onTrial], account.chat);
-            account.send(this.players[onTrial].isme ? 15 : 14); // Voting guilty for everyone, except self
+            if (!this.players[onTrial].isme) {
+                this.report();
+                account.send(this.players[onTrial].score > 0.5 ? 15 : 14);
+            }
         });
         account.on('TellJudgementVotes', message => {
             var origin = this.players[message.charCodeAt(0) - 1];
@@ -294,7 +322,7 @@ class Game {
                 console.log(chalk.magenta('From ' + this.players[message.charCodeAt(1) - 1].name + ' to ' + this.players[message.charCodeAt(2) - 1].name + ': ') + text);
                 this.players[message.charCodeAt(1) - 1].whispers.push({target: message.charCodeAt(2) - 1, what: text});
                 if (text.match(/spy/i) && text.match(/test/i) && !this.players[message.charCodeAt(1) - 1].isme) {
-                    account.send(8, message.charAt(1) + ' ' + text);
+                    setTimeout(() => account.send(8, message.charAt(1) + ' ' + text), Math.random() * 3000);
                 }
             }
         });

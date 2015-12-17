@@ -201,13 +201,17 @@ class Game {
             this.update();
         });
         var reasonsVote = ['I just think this guy is evil', 'evil', 'trust me', ';-;', 'dont wanna burn :P', 'guilty', 'lynch this weirdo', 'His house is burning, bad sign', 'I\'m a hacker and I know this guy is evil', 'K let\'s random', 'random.org', 'Chosen by fair roll dice, guaranted to be evil', '-_-', ':O', 'tarnation maf', 'found the witchy', 'IT\'S HIM', 'Sooo why did you try to kill me ?', ' I am the Sheriff.  I found our Mafioso last night.  It\'s Player Nine!!', 'Hrm....  Need to find the SK....'];
+        var currentVote = null;
         account.on('StartVoting', () => {
             console.log(chalk.bgBlue(' Voting '));
+            currentVote = null;
             if (Math.random() < 0.66) {
+                var t = this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))];
+                currentVote = t.id;
                 setTimeout(() => {
-                    account.send(10, String.fromCharCode(this.report().evils[Math.floor(Math.random() * Math.min(3, this.report().evils.length))].id));
-                    if (Math.random() < 0.5) {
-                        setTimeout(() => acount.chat(reasonsVote[Math.floor(Math.random() * reasonsVote.length)]), Math.random() * 6000);
+                    account.send(10, String.fromCharCode(t.id));
+                    if (Math.random() < 0.33) {
+                        setTimeout(() => account.chat(reasonsVote[Math.floor(Math.random() * reasonsVote.length)]), Math.random() * 4000);
                     }
                 }, Math.random() * 5000);
             }
@@ -216,6 +220,11 @@ class Game {
             var origin = this.players[message.charCodeAt(0) - 1];
             origin.votes[origin.votes.length - 1] = message.charCodeAt(1) - 1;
             this.players[message.charCodeAt(1) - 1].targeted++;
+            this.report();
+            if (this.players[message.charCodeAt(1) - 1].score > 0.5 && currentVote !== message.charCodeAt(1)) {
+                setTimeout(() => account.send(10, message.charAt(1)), 400);
+                currentVote = message.charCodeAt(1);
+            }
         };
         account.on('UserVoted', doVote);
         account.on('UserChangedVoted', doVote);
@@ -279,7 +288,7 @@ class Game {
             console.log(chalk.bgBlue(' Judgement '));
             if (!this.players[onTrial].isme) {
                 this.report();
-                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 15 : 14), 5000);
+                setTimeout(() => account.send(this.players[onTrial].score > 0.5 ? 14 : 15), 5000);
             }
         });
         account.on('TellJudgementVotes', message => {

@@ -396,14 +396,14 @@ class Game {
     update() {
         this.account.send(17, this.lastwill(this));
         this.account.send(18, this.deathnote(this));
-        if (this.report().evils.length > 0) {
+        if (this.report().evils.length > 0 && this.w >= 2) {
             this.account.send(16, String.fromCharCode(this.self().role === 'Mayor' ? this.self().id : this.report().evils[0].id));
         }
     }
     day() {
         console.log(chalk.bgBlue(' Day '));
-        this.update();
         this.w += 1;
+        this.update();
         this.state = 'day';
         this.array().filter(player => !player.dead).forEach(player => {
             player.messages.push([]);

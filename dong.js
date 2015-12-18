@@ -69,13 +69,13 @@ function mouth() {
 
 function assemble(dong) {
     if (dong.orientation === orientations.left) {
-        // \(-_-o\ ) <-- Sample dong
-        return dong.arms.left + dong.body.left + dong.eyes + dong.mouth + dong.eyes + dong.cheeks + dong.arms.right + (Math.random() < 0.1 ? ' ' : '') + dong.body.right;
+        // \(-_-\) <-- Sample dong
+        return dong.arms.left + dong.body.left + dong.eyes + dong.mouth + dong.eyes + dong.cheeks + dong.arms.right + (Math.random() < 0.3 ? ' ' : '') + dong.body.right;
     } else if (dong.orientation === orientations.right) {
-        // ( /o-_-)/
-        return dong.body.left + (Math.random() < 0.1 ? ' ' : '') + dong.arms.left + dong.cheeks + dong.eyes + dong.mouth + dong.eyes + dong.body.right + dong.arms.right;
+        // (/-_-)/
+        return dong.body.left + (Math.random() < 0.3 ? ' ' : '') + dong.arms.left + dong.cheeks + dong.eyes + dong.mouth + dong.eyes + dong.body.right + dong.arms.right;
     } else {
-        // \(o^_^o)/
+        // \(^.^)/
         return dong.arms.left + dong.body.left + dong.cheeks + dong.eyes + dong.mouth + dong.eyes + dong.cheeks + dong.body.right + dong.arms.right;
     }
 }
